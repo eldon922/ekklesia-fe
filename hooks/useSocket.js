@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 
 const SOCKET_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
+  process.env.EKKLESIA_API_URL?.replace("/ekklesia-api", "") ||
   "http://localhost:4000";
 
 // Singleton socket instance shared across the app

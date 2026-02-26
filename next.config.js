@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api',
+    EKKLESIA_API_URL: process.env.EKKLESIA_API_URL || 'http://localhost:4000/ekklesia-api',
   },
 };
 

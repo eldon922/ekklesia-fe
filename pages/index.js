@@ -188,8 +188,8 @@ export default function EventsPage() {
     if (events.length === 0) return;
     const eventIds = events.map((e) => e.id);
     const SOCKET_URL = (
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"
-    ).replace("/api", "");
+      process.env.EKKLESIA_API_URL || "http://localhost:4000/ekklesia-api"
+    ).replace("/ekklesia-api", "");
     let s;
     import("socket.io-client").then(({ io }) => {
       s = io(SOCKET_URL, { autoConnect: true });
