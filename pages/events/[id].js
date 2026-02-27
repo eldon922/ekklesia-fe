@@ -9,6 +9,10 @@ import { useLang } from "../../contexts/LangContext";
 import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 
+// Helper to find original index in unfiltered list
+const getOriginalIndex = (attendeeId, allAttendees) =>
+  allAttendees.findIndex((a) => a.id === attendeeId) + 1;
+
 // ── Password Gate ─────────────────────────────────────────────────────────────
 function PasswordGate({ event, onUnlock }) {
   const { t } = useLang();
@@ -162,6 +166,7 @@ export default function EventDetailPage() {
 
   const [event, setEvent] = useState(null);
   const [attendees, setAttendees] = useState([]);
+  const [allAttendees, setAllAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
   const [search, setSearch] = useState("");
@@ -189,6 +194,15 @@ export default function EventDetailPage() {
     } catch {}
   }, [id]);
 
+  // Fetch unfiltered list for original numbering
+  const fetchAllAttendees = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await attendeesApi.getAll(id, {});
+      setAllAttendees(res.data.data);
+    } catch {}
+  }, [id]);
+
   const fetchAttendees = useCallback(async () => {
     if (!id) return;
     try {
@@ -205,6 +219,11 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (id) fetchEvent().finally(() => setLoading(false));
   }, [id]);
+
+  // Fetch all attendees (unfiltered) for original numbering
+  useEffect(() => {
+    fetchAllAttendees();
+  }, [id, fetchAllAttendees]);
 
   // Fetch (or re-fetch) attendees whenever the event is unlocked, or search/filter change
   useEffect(() => {
@@ -692,6 +711,7 @@ export default function EventDetailPage() {
                   placeholder={t.detail_search_placeholder}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
                 />
               </div>
             </div>
@@ -732,7 +752,7 @@ export default function EventDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {attendees.map((a, idx) => (
+                  {attendees.map((a) => (
                     <tr
                       key={a.id}
                       style={{
@@ -745,7 +765,7 @@ export default function EventDetailPage() {
                       <td
                         style={{ color: "var(--text-faint)", fontSize: "12px" }}
                       >
-                        {idx + 1}
+                        {getOriginalIndex(a.id, allAttendees)}
                       </td>
                       <td style={{ fontWeight: 600 }}>{a.name}</td>
                       <td
