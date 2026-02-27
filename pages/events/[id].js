@@ -277,6 +277,7 @@ export default function EventDetailPage() {
     },
     onImported: ({ stats }) => {
       fetchAttendees();
+      fetchAllAttendees();
       applyStats(stats);
     },
     onCleared: ({ stats }) => {
