@@ -105,12 +105,12 @@ Theme preference is persisted in `localStorage` and applied before first paint v
 Create a `.env.local` file in the `frontend/` directory:
 
 ```env
-EKKLESIA_API_URL=http://localhost:4000/ekklesia-api
+NEXT_PUBLIC_EKKLESIA_API_URL=http://localhost:4000
 ```
 
 | Variable | Default | Description |
 |---|---|---|
-| `EKKLESIA_API_URL` | `http://localhost:4000/ekklesia-api` | Base URL of the backend API |
+| `NEXT_PUBLIC_EKKLESIA_API_URL` | `http://localhost:4000` | Base URL of the backend API |
 
 ---
 

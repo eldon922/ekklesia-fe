@@ -187,12 +187,15 @@ export default function EventsPage() {
   useEffect(() => {
     if (events.length === 0) return;
     const eventIds = events.map((e) => e.id);
+
+    console.debug("Setting up socket connection using URL:", process.env.NEXT_PUBLIC_EKKLESIA_API_URL);
     const SOCKET_URL = (
-      process.env.EKKLESIA_API_URL || "http://localhost:4000/ekklesia-api"
-    ).replace("/ekklesia-api", "");
+      process.env.NEXT_PUBLIC_EKKLESIA_API_URL || "http://localhost:4000"
+    );
     let s;
     import("socket.io-client").then(({ io }) => {
-      s = io(SOCKET_URL, { autoConnect: true });
+      console.debug("Initializing socket connection to", SOCKET_URL);
+      s = io(SOCKET_URL, { autoConnect: true, secure: SOCKET_URL.startsWith("https") });
 
       eventIds.forEach((id) => s.emit("join_event", String(id)));
       const handler = (payload) => {

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 
+console.debug("useSocket module loaded, API URL:", process.env.NEXT_PUBLIC_EKKLESIA_API_URL);
 const SOCKET_URL =
-  process.env.EKKLESIA_API_URL?.replace("/ekklesia-api", "") ||
+  process.env.NEXT_PUBLIC_EKKLESIA_API_URL ||
   "http://localhost:4000";
 
 // Singleton socket instance shared across the app
@@ -10,12 +11,14 @@ let socket = null;
 
 function getSocket() {
   if (!socket) {
+    console.debug("Initializing socket connection to", SOCKET_URL);
     socket = io(SOCKET_URL, {
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
+      secure: SOCKET_URL.startsWith("https"),
     });
   }
   return socket;
