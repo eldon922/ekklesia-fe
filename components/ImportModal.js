@@ -44,7 +44,9 @@ export default function ImportModal({ eventId, onClose, onImported }) {
       if (res.data.duplicates && res.data.duplicates.length > 0) {
         setDuplicates(res.data.duplicates);
         setMode("duplicates");
-        toast.success(`${res.data.imported} imported. ${res.data.duplicates.length} duplicates found.`);
+        toast.success(
+          `${res.data.imported} imported. ${res.data.duplicates.length} duplicates found.`,
+        );
       } else {
         toast.success(res.data.message);
         onImported();
@@ -102,12 +104,13 @@ export default function ImportModal({ eventId, onClose, onImported }) {
     }
   };
 
-
-
   return (
     <div
       className="modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && (mode !== "duplicates" ? onClose() : null)}
+      onClick={(e) =>
+        e.target === e.currentTarget &&
+        (mode !== "duplicates" ? onClose() : null)
+      }
     >
       <div className="modal">
         <div className="modal-header">
@@ -151,10 +154,24 @@ export default function ImportModal({ eventId, onClose, onImported }) {
                   {t.import_name_col}
                 </span>{" "}
                 {t.import_required} ·{" "}
-                <span style={{ color: "var(--text)" }}>{t.import_phone_col}</span>{" "}
+                <span style={{ color: "var(--text)" }}>
+                  {t.import_phone_col}
+                </span>{" "}
                 {t.import_optional} ·{" "}
-                <span style={{ color: "var(--text)" }}>{t.import_email_col}</span>{" "}
-                {t.import_optional}
+                <span style={{ color: "var(--text)" }}>
+                  {t.import_email_col}
+                </span>{" "}
+                {t.import_optional} ·{" "}
+                <span
+                  style={{
+                    color: "var(--text-muted)",
+                    fontStyle: "italic",
+                    fontSize: "11px",
+                  }}
+                >
+                  (kolom: &quot;Gereja Asal&quot;, &quot;Gereja&quot;, atau
+                  &quot;Email&quot;)
+                </span>
               </p>
             </div>
 
@@ -273,11 +290,26 @@ export default function ImportModal({ eventId, onClose, onImported }) {
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               <div>
-                <p style={{ fontSize: "12px", color: "var(--text)", fontWeight: 600, marginBottom: "4px" }}>
-                  {duplicates.length} duplicate{duplicates.length !== 1 ? "s" : ""} found
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--text)",
+                    fontWeight: 600,
+                    marginBottom: "4px",
+                  }}
+                >
+                  {duplicates.length} duplicate
+                  {duplicates.length !== 1 ? "s" : ""} found
                 </p>
-                <p style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  These names or phone numbers already exist. Choose which ones to import.
+                <p
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--text-muted)",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  These names or phone numbers already exist. Choose which ones
+                  to import.
                 </p>
               </div>
             </div>
@@ -292,7 +324,15 @@ export default function ImportModal({ eventId, onClose, onImported }) {
                 borderBottom: "1px solid var(--border)",
               }}
             >
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", userSelect: "none" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  userSelect: "none",
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={selectedDuplicates.size === duplicates.length}
@@ -307,7 +347,13 @@ export default function ImportModal({ eventId, onClose, onImported }) {
               </label>
             </div>
 
-            <div style={{ maxHeight: "300px", overflowY: "auto", marginBottom: "16px" }}>
+            <div
+              style={{
+                maxHeight: "300px",
+                overflowY: "auto",
+                marginBottom: "16px",
+              }}
+            >
               {duplicates.map((dup, idx) => (
                 <div
                   key={idx}
@@ -326,16 +372,35 @@ export default function ImportModal({ eventId, onClose, onImported }) {
                     style={{ marginTop: "3px", cursor: "pointer" }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "6px" }}>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        marginBottom: "6px",
+                      }}
+                    >
                       {dup.name}
                     </p>
                     {dup.phone && (
-                      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "2px" }}>
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--text-muted)",
+                          marginBottom: "2px",
+                        }}
+                      >
                         📱 {dup.phone}
                       </p>
                     )}
                     {dup.email && (
-                      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--text-muted)",
+                          marginBottom: "4px",
+                        }}
+                      >
                         ✉️ {dup.email}
                       </p>
                     )}
@@ -349,16 +414,36 @@ export default function ImportModal({ eventId, onClose, onImported }) {
                           marginTop: "6px",
                         }}
                       >
-                        <p style={{ fontSize: "11px", color: "var(--warning)", fontWeight: 600, margin: "0 0 3px 0" }}>
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--warning)",
+                            fontWeight: 600,
+                            margin: "0 0 3px 0",
+                          }}
+                        >
                           Matched by {dup.matchedBy.toUpperCase()}
                         </p>
                         {dup.matchedBy === "phone" && (
                           <>
-                            <p style={{ fontSize: "11px", color: "var(--text)", margin: "2px 0" }}>
-                              Existing: <strong>{dup.existingPhone || "—"}</strong>
+                            <p
+                              style={{
+                                fontSize: "11px",
+                                color: "var(--text)",
+                                margin: "2px 0",
+                              }}
+                            >
+                              Existing:{" "}
+                              <strong>{dup.existingPhone || "—"}</strong>
                             </p>
                             {dup.existingName && (
-                              <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "2px 0" }}>
+                              <p
+                                style={{
+                                  fontSize: "11px",
+                                  color: "var(--text-muted)",
+                                  margin: "2px 0",
+                                }}
+                              >
                                 Name: {dup.existingName}
                               </p>
                             )}
@@ -366,11 +451,24 @@ export default function ImportModal({ eventId, onClose, onImported }) {
                         )}
                         {dup.matchedBy === "name" && (
                           <>
-                            <p style={{ fontSize: "11px", color: "var(--text)", margin: "2px 0" }}>
-                              Existing: <strong>{dup.existingName || "—"}</strong>
+                            <p
+                              style={{
+                                fontSize: "11px",
+                                color: "var(--text)",
+                                margin: "2px 0",
+                              }}
+                            >
+                              Existing:{" "}
+                              <strong>{dup.existingName || "—"}</strong>
                             </p>
                             {dup.existingPhone && (
-                              <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "2px 0" }}>
+                              <p
+                                style={{
+                                  fontSize: "11px",
+                                  color: "var(--text-muted)",
+                                  margin: "2px 0",
+                                }}
+                              >
                                 Phone: {dup.existingPhone}
                               </p>
                             )}
@@ -384,8 +482,6 @@ export default function ImportModal({ eventId, onClose, onImported }) {
             </div>
           </div>
         )}
-
-
 
         <div className="modal-footer">
           {mode === "initial" && (
@@ -405,29 +501,28 @@ export default function ImportModal({ eventId, onClose, onImported }) {
 
           {mode === "duplicates" && (
             <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    onImported();
-                    onClose();
-                  }}
-                >
-                  Skip Duplicates
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleImportDuplicates}
-                  disabled={selectedDuplicates.size === 0 || loading}
-                >
-                  {loading ? "Importing..." : `Import Selected (${selectedDuplicates.size})`}
-                </button>
-              </div>
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  onImported();
+                  onClose();
+                }}
+              >
+                Skip Duplicates
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleImportDuplicates}
+                disabled={selectedDuplicates.size === 0 || loading}
+              >
+                {loading
+                  ? "Importing..."
+                  : `Import Selected (${selectedDuplicates.size})`}
+              </button>
+            </div>
           )}
-
-
         </div>
       </div>
     </div>
   );
 }
-

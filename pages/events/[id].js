@@ -162,7 +162,7 @@ function PasswordGate({ event, onUnlock }) {
 export default function EventDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   const [event, setEvent] = useState(null);
   const [attendees, setAttendees] = useState([]);
@@ -182,6 +182,10 @@ export default function EventDetailPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const [liveActivity, setLiveActivity] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
+  // finish / restart confirmation modal: null | 'finish' | 'restart'
+  const [finishModal, setFinishModal] = useState(null);
+  const [finishLoading, setFinishLoading] = useState(false);
 
   const fetchEvent = useCallback(async () => {
     if (!id) return;
@@ -189,7 +193,6 @@ export default function EventDetailPage() {
       const res = await eventsApi.getOne(id);
       const ev = res.data.data;
       setEvent(ev);
-      // Auto-unlock events that have no password protection
       if (!ev.is_protected) setUnlocked(true);
     } catch {}
   }, [id]);
@@ -215,17 +218,14 @@ export default function EventDetailPage() {
     } catch {}
   }, [id, search, filter]);
 
-  // Load event metadata on mount; attendees are deferred until unlocked
   useEffect(() => {
     if (id) fetchEvent().finally(() => setLoading(false));
   }, [id]);
 
-  // Fetch all attendees (unfiltered) for original numbering
   useEffect(() => {
     fetchAllAttendees();
   }, [id, fetchAllAttendees]);
 
-  // Fetch (or re-fetch) attendees whenever the event is unlocked, or search/filter change
   useEffect(() => {
     if (id && unlocked) fetchAttendees();
   }, [search, filter, id, unlocked]);
@@ -254,7 +254,6 @@ export default function EventDetailPage() {
     onCheckedIn: ({ attendee, stats }) => {
       patchAttendee(attendee);
       applyStats(stats);
-      // Show activity banner (no toast — just visual indicator)
       setLiveActivity({ name: attendee.name, ts: Date.now() });
       setTimeout(() => setLiveActivity((a) => (a?.ts ? null : a)), 4000);
     },
@@ -269,10 +268,16 @@ export default function EventDetailPage() {
           return [...prev, attendee];
         });
       }
+      // Also update allAttendees so numbering is correct without refresh
+      setAllAttendees((prev) => {
+        if (prev.find((a) => a.id === attendee.id)) return prev;
+        return [...prev, attendee];
+      });
       applyStats(stats);
     },
     onDeleted: ({ attendeeId, stats }) => {
       setAttendees((prev) => prev.filter((a) => a.id !== attendeeId));
+      setAllAttendees((prev) => prev.filter((a) => a.id !== attendeeId));
       applyStats(stats);
     },
     onImported: ({ stats }) => {
@@ -282,7 +287,16 @@ export default function EventDetailPage() {
     },
     onCleared: ({ stats }) => {
       setAttendees([]);
+      setAllAttendees([]);
       applyStats(stats);
+    },
+    onFinished: () => {
+      setEvent((prev) => (prev ? { ...prev, is_finished: true } : prev));
+      toast(t.event_finished_banner, { icon: "🔒" });
+    },
+    onRestarted: () => {
+      setEvent((prev) => (prev ? { ...prev, is_finished: false } : prev));
+      toast(t.toast_event_restarted, { icon: "🔓" });
     },
   });
 
@@ -331,6 +345,56 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const response = await attendeesApi.export(id, lang);
+      // response.data is already a Blob when responseType:'blob' — use it directly
+      const url = URL.createObjectURL(response.data);
+      const a = document.createElement("a");
+      a.href = url;
+      let filename = `${lang=='id' ? 'peserta' : 'attendees'}_${event?.name}_${new Date().toLocaleString().replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(t.toast_export_success);
+    } catch {
+      toast.error(t.toast_export_fail);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleFinishEvent = async () => {
+    setFinishLoading(true);
+    try {
+      await eventsApi.finish(id);
+      setEvent((prev) => (prev ? { ...prev, is_finished: true } : prev));
+      toast.success(t.toast_event_finished);
+    } catch (err) {
+      toast.error(err.response?.data?.message || t.toast_error_generic);
+    } finally {
+      setFinishLoading(false);
+      setFinishModal(null);
+    }
+  };
+
+  const handleRestartEvent = async () => {
+    setFinishLoading(true);
+    try {
+      await eventsApi.restart(id);
+      setEvent((prev) => (prev ? { ...prev, is_finished: false } : prev));
+      toast.success(t.toast_event_restarted);
+    } catch (err) {
+      toast.error(err.response?.data?.message || t.toast_error_generic);
+    } finally {
+      setFinishLoading(false);
+      setFinishModal(null);
+    }
+  };
+
   const formatDate = (d) => {
     try {
       return format(parseISO(d), "dd MMM yyyy");
@@ -375,7 +439,6 @@ export default function EventDetailPage() {
       </Layout>
     );
 
-  // Show password gate for protected events that haven't been unlocked yet
   if (!unlocked)
     return <PasswordGate event={event} onUnlock={() => setUnlocked(true)} />;
 
@@ -449,14 +512,43 @@ export default function EventDetailPage() {
               {event.name}
             </span>
           </div>
-          <h1 className="page-title">{event.name}</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <h1 className="page-title" style={{ margin: 0 }}>
+              {event.name}
+            </h1>
+            {event.is_finished && (
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "3px 9px",
+                  borderRadius: "var(--radius)",
+                  background: "var(--warning-dim)",
+                  color: "var(--warning)",
+                  border: "1px solid rgba(234,179,8,0.3)",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {t.event_finished_badge}
+              </span>
+            )}
+          </div>
           <p className="page-subtitle">
             {event.date ? formatDate(event.date) : ""}
             {event.date && event.time ? ` · ${event.time.substring(0, 5)}` : ""}
             {event.location ? ` · ${event.location}` : ""}
           </p>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -486,9 +578,38 @@ export default function EventDetailPage() {
               {connected ? t.detail_live : t.detail_offline}
             </span>
           </div>
+          {/* Export Excel — only available when event is finished */}
+          {event.is_finished && (
+            <button
+              className="btn btn-secondary"
+              onClick={handleExport}
+              disabled={exportLoading}
+            >
+              <svg
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                width={14}
+                height={14}
+                strokeWidth={2}
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {exportLoading ? "..." : t.detail_export}
+            </button>
+          )}
+          {/* Import Data */}
           <button
             className="btn btn-secondary"
             onClick={() => setShowImport(true)}
+            disabled={event.is_finished}
+            style={
+              event.is_finished
+                ? { opacity: 0.4, cursor: "not-allowed" }
+                : undefined
+            }
           >
             <svg
               fill="none"
@@ -504,9 +625,16 @@ export default function EventDetailPage() {
             </svg>
             {t.detail_import}
           </button>
+          {/* Add Attendee */}
           <button
             className="btn btn-primary"
             onClick={() => setShowAddForm(true)}
+            disabled={event.is_finished}
+            style={
+              event.is_finished
+                ? { opacity: 0.4, cursor: "not-allowed" }
+                : undefined
+            }
           >
             <svg
               fill="none"
@@ -521,10 +649,105 @@ export default function EventDetailPage() {
             </svg>
             {t.detail_add}
           </button>
+          {/* Finish / Restart Event */}
+          {event.is_finished ? (
+            <button
+              className="btn btn-secondary"
+              onClick={() => setFinishModal("restart")}
+              style={{
+                color: "var(--success)",
+                borderColor: "rgba(22,163,74,0.4)",
+              }}
+            >
+              <svg
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                width={14}
+                height={14}
+                strokeWidth={2}
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              {t.event_restart_btn}
+            </button>
+          ) : (
+            <button
+              className="btn btn-secondary"
+              onClick={() => setFinishModal("finish")}
+              style={{
+                color: "var(--warning)",
+                borderColor: "rgba(234,179,8,0.4)",
+              }}
+            >
+              <svg
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                width={14}
+                height={14}
+                strokeWidth={2}
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+              {t.event_finish_btn}
+            </button>
+          )}
         </div>
       </div>
 
       <div className="page-content">
+        {/* Finished event warning banner */}
+        {event.is_finished && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "12px 16px",
+              background: "var(--warning-dim)",
+              border: "1px solid rgba(234,179,8,0.3)",
+              borderRadius: "var(--radius)",
+              marginBottom: "20px",
+            }}
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              width={16}
+              height={16}
+              strokeWidth={2}
+              style={{ color: "var(--warning)", flexShrink: 0 }}
+            >
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <span
+              style={{
+                fontSize: "13px",
+                color: "var(--warning)",
+                fontWeight: 600,
+              }}
+            >
+              {t.event_finished_banner}
+            </span>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setFinishModal("restart")}
+              style={{
+                marginLeft: "auto",
+                fontSize: "12px",
+                color: "var(--warning)",
+              }}
+            >
+              {t.event_restart_btn}
+            </button>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="stats-grid">
           {[
@@ -651,7 +874,7 @@ export default function EventDetailPage() {
                       </span>
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       className="form-input"
                       value={newAttendee.email}
                       onChange={(e) =>
@@ -768,7 +991,35 @@ export default function EventDetailPage() {
                       >
                         {getOriginalIndex(a.id, allAttendees)}
                       </td>
-                      <td style={{ fontWeight: 600 }}>{a.name}</td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{a.name}</div>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            fontSize: "9px",
+                            padding: "1px 5px",
+                            borderRadius: "3px",
+                            background:
+                              a.source === "import"
+                                ? "var(--accent-dim)"
+                                : "var(--bg-elevated)",
+                            color:
+                              a.source === "import"
+                                ? "var(--accent)"
+                                : "var(--text-faint)",
+                            border: "1px solid",
+                            borderColor:
+                              a.source === "import"
+                                ? "rgba(37,99,235,0.2)"
+                                : "var(--border)",
+                            marginTop: "3px",
+                          }}
+                        >
+                          {a.source === "import"
+                            ? t.source_import
+                            : t.source_manual}
+                        </span>
+                      </td>
                       <td
                         style={{ fontSize: "13px", color: "var(--text-muted)" }}
                       >
@@ -820,6 +1071,20 @@ export default function EventDetailPage() {
                             >
                               {t.detail_btn_undo}
                             </button>
+                          ) : event.is_finished ? (
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              disabled
+                              title={t.event_finished_checkin_blocked}
+                              style={{
+                                fontSize: "11px",
+                                color: "var(--text-faint)",
+                                cursor: "not-allowed",
+                                opacity: 0.5,
+                              }}
+                            >
+                              {t.detail_btn_checkin}
+                            </button>
                           ) : (
                             <button
                               className="btn btn-success btn-sm"
@@ -828,23 +1093,25 @@ export default function EventDetailPage() {
                               {t.detail_btn_checkin}
                             </button>
                           )}
-                          <button
-                            className="btn btn-ghost btn-icon btn-sm"
-                            onClick={() => handleDeleteAttendee(a.id)}
-                            style={{ color: "var(--danger)" }}
-                          >
-                            <svg
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              width={12}
-                              height={12}
-                              strokeWidth={2}
+                          {!event.is_finished && (
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => handleDeleteAttendee(a.id)}
+                              style={{ color: "var(--danger)" }}
                             >
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                            </svg>
-                          </button>
+                              <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                width={12}
+                                height={12}
+                                strokeWidth={2}
+                              >
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -902,6 +1169,65 @@ export default function EventDetailPage() {
         </div>
       )}
 
+      {/* Finish / Restart confirmation modal */}
+      {finishModal && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => e.target === e.currentTarget && setFinishModal(null)}
+        >
+          <div className="modal" style={{ maxWidth: "400px" }}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {finishModal === "finish"
+                  ? t.event_finish_title
+                  : t.event_restart_title}
+              </h2>
+            </div>
+            <div className="modal-body">
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "var(--text-muted)",
+                  lineHeight: 1.6,
+                }}
+              >
+                {finishModal === "finish"
+                  ? t.event_finish_confirm
+                  : t.event_restart_confirm}
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setFinishModal(null)}
+                disabled={finishLoading}
+              >
+                {t.cancel}
+              </button>
+              <button
+                className={
+                  finishModal === "finish"
+                    ? "btn btn-danger"
+                    : "btn btn-primary"
+                }
+                onClick={
+                  finishModal === "finish"
+                    ? handleFinishEvent
+                    : handleRestartEvent
+                }
+                disabled={finishLoading}
+              >
+                {finishLoading
+                  ? "..."
+                  : finishModal === "finish"
+                    ? t.event_finish_btn
+                    : t.event_restart_btn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         @keyframes pulse {
           0%,
@@ -910,6 +1236,16 @@ export default function EventDetailPage() {
           }
           50% {
             opacity: 0.4;
+          }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
           }
         }
       `}</style>

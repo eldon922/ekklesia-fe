@@ -1,10 +1,12 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-console.debug("useSocket module loaded, API URL:", process.env.NEXT_PUBLIC_EKKLESIA_API_URL);
+console.debug(
+  "useSocket module loaded, API URL:",
+  process.env.NEXT_PUBLIC_EKKLESIA_API_URL,
+);
 const SOCKET_URL =
-  process.env.NEXT_PUBLIC_EKKLESIA_API_URL ||
-  "http://localhost:4000";
+  process.env.NEXT_PUBLIC_EKKLESIA_API_URL || "http://localhost:4000";
 
 // Singleton socket instance shared across the app
 let socket = null;
@@ -37,6 +39,8 @@ function getSocket() {
  *   onDeleted(payload)      → attendee:deleted
  *   onImported(payload)     → attendees:imported
  *   onCleared(payload)      → attendees:cleared
+ *   onFinished(payload)     → event:finished
+ *   onRestarted(payload)    → event:restarted
  *   onConnect()
  *   onDisconnect()
  *
@@ -66,6 +70,8 @@ export function useSocket(eventId, handlers = {}) {
     const onDeleted = wrap((p) => handlersRef.current.onDeleted?.(p));
     const onImported = wrap((p) => handlersRef.current.onImported?.(p));
     const onCleared = wrap((p) => handlersRef.current.onCleared?.(p));
+    const onFinished = wrap((p) => handlersRef.current.onFinished?.(p));
+    const onRestarted = wrap((p) => handlersRef.current.onRestarted?.(p));
     const onConnect = wrap(() => handlersRef.current.onConnect?.());
     const onDisconnect = wrap(() => handlersRef.current.onDisconnect?.());
 
@@ -75,6 +81,8 @@ export function useSocket(eventId, handlers = {}) {
     s.on("attendee:deleted", onDeleted);
     s.on("attendees:imported", onImported);
     s.on("attendees:cleared", onCleared);
+    s.on("event:finished", onFinished);
+    s.on("event:restarted", onRestarted);
     s.on("connect", onConnect);
     s.on("disconnect", onDisconnect);
 
@@ -94,6 +102,8 @@ export function useSocket(eventId, handlers = {}) {
       s.off("attendee:deleted", onDeleted);
       s.off("attendees:imported", onImported);
       s.off("attendees:cleared", onCleared);
+      s.off("event:finished", onFinished);
+      s.off("event:restarted", onRestarted);
       s.off("connect", onConnect);
       s.off("disconnect", onDisconnect);
     };
