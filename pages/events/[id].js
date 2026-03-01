@@ -186,6 +186,8 @@ export default function EventDetailPage() {
   // finish / restart confirmation modal: null | 'finish' | 'restart'
   const [finishModal, setFinishModal] = useState(null);
   const [finishLoading, setFinishLoading] = useState(false);
+  // Scroll to top FAB state
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const fetchEvent = useCallback(async () => {
     if (!id) return;
@@ -409,6 +411,25 @@ export default function EventDetailPage() {
       return "";
     }
   };
+
+  // Scroll to top handler
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  // Scroll event listener
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollThreshold = 300;
+      setShowScrollTop(window.scrollY > scrollThreshold);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const total = parseInt(event?.total_attendees) || 0;
   const checkedIn = parseInt(event?.checked_in_count) || 0;
@@ -1228,6 +1249,51 @@ export default function EventDetailPage() {
         </div>
       )}
 
+      {/* Scroll to top FAB */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          style={{
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            background: "var(--accent)",
+            color: "#ffffff",
+            border: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "var(--shadow-md)",
+            zIndex: 1000,
+            transition: "all 0.2s ease",
+            animation: "fadeIn 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--accent-hover)";
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--accent)";
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            width={20}
+            height={20}
+            strokeWidth={2.5}
+          >
+            <polyline points="18 15 12 9 6 15" />
+          </svg>
+        </button>
+      )}
+
       <style jsx>{`
         @keyframes pulse {
           0%,
@@ -1246,6 +1312,16 @@ export default function EventDetailPage() {
           to {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>
