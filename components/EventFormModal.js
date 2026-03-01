@@ -41,7 +41,7 @@ export default function EventFormModal({ event, onClose, onSaved }) {
       };
       if (isEditing) {
         if (form.remove_password) payload.remove_password = true;
-        else if (changePassword && form.password) payload.password = form.password;
+        else if ((changePassword || !isProtected) && form.password) payload.password = form.password;
       } else {
         if (form.password) payload.password = form.password;
       }
@@ -137,7 +137,7 @@ export default function EventFormModal({ event, onClose, onSaved }) {
                 </div>
               )}
 
-              {(!isEditing || changePassword) && !form.remove_password && (
+              {(!isEditing || changePassword || !isProtected) && !form.remove_password && (
                 <div>
                   <label className="form-label">{isEditing ? t.form_new_password : t.form_set_password} <span style={{ color: 'var(--text-faint)', fontWeight: 400 }}>{t.form_optional}</span></label>
                   <div style={{ position: 'relative' }}>
@@ -147,11 +147,11 @@ export default function EventFormModal({ event, onClose, onSaved }) {
                     </button>
                   </div>
                   <p style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '5px' }}>{t.form_password_hint}</p>
-                  {isEditing && <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: '6px' }} onClick={() => setChangePassword(false)}>{t.form_cancel_change}</button>}
+                  {isEditing && isProtected && changePassword && <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: '6px' }} onClick={() => setChangePassword(false)}>{t.form_cancel_change}</button>}
                 </div>
               )}
 
-              {!isEditing && !form.password && (
+              {(!isEditing || !isProtected) && !form.password && (
                 <p style={{ fontSize: '12px', color: 'var(--text-faint)', marginTop: '4px' }}>{t.form_password_desc}</p>
               )}
             </div>
