@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.0.1-beta.0";
+const APP_VERSION = require('../package.json').version;
 const WA_URL = "https://wa.me/+6289618113757";
 
 import Link from "next/link";
