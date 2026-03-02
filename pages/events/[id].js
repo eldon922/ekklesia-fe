@@ -530,6 +530,7 @@ export default function EventDetailPage() {
       {/* Live activity banner */}
       {liveActivity && (
         <div
+          className="live-activity-banner"
           style={{
             position: "fixed",
             top: "16px",
@@ -624,6 +625,7 @@ export default function EventDetailPage() {
           </p>
         </div>
         <div
+          className="detail-header-actions"
           style={{
             display: "flex",
             gap: "8px",
@@ -896,6 +898,7 @@ export default function EventDetailPage() {
             <form onSubmit={handleAddAttendee}>
               <div className="card-body">
                 <div
+                  className="add-attendee-grid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "2fr 1fr 1fr auto",
@@ -1051,8 +1054,8 @@ export default function EventDetailPage() {
                   <tr>
                     <th>{t.detail_col_no}</th>
                     <th>{t.detail_col_name}</th>
-                    <th>{t.detail_col_phone}</th>
-                    <th>{t.detail_col_email}</th>
+                    <th className="table-col-phone">{t.detail_col_phone}</th>
+                    <th className="table-col-email">{t.detail_col_email}</th>
                     <th>{t.detail_col_status}</th>
                     <th>{t.detail_col_time}</th>
                     <th>{t.detail_col_actions}</th>
@@ -1104,11 +1107,13 @@ export default function EventDetailPage() {
                         </span>
                       </td>
                       <td
+                        className="table-col-phone"
                         style={{ fontSize: "13px", color: "var(--text-muted)" }}
                       >
                         {a.phone_number || "—"}
                       </td>
                       <td
+                        className="table-col-email"
                         style={{ fontSize: "13px", color: "var(--text-muted)" }}
                       >
                         {a.email || "—"}
@@ -1410,6 +1415,7 @@ export default function EventDetailPage() {
 
       {/* Scroll FABs */}
       <div
+        className="scroll-fabs"
         style={{
           position: "fixed",
           bottom: "24px",

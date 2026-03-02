@@ -541,6 +541,7 @@ export default function CheckInPage() {
         ) : (
           /* Check-in station */
           <div
+            className="checkin-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 280px",
@@ -974,7 +975,7 @@ export default function CheckInPage() {
 
             {/* Live feed — only shows check-ins from ALL operators (no toast for others) */}
             <div>
-              <div className="card" style={{ position: "sticky", top: "20px" }}>
+              <div className="card checkin-live-feed-sticky" style={{ position: "sticky", top: "20px" }}>
                 <div className="card-header">
                   <span className="card-title">{t.checkin_live_feed}</span>
                   {connected && (
