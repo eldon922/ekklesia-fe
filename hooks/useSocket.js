@@ -68,6 +68,7 @@ export function useSocket(eventId, handlers = {}) {
     const onUnchecked = wrap((p) => handlersRef.current.onUnchecked?.(p));
     const onAdded = wrap((p) => handlersRef.current.onAdded?.(p));
     const onDeleted = wrap((p) => handlersRef.current.onDeleted?.(p));
+    const onUpdated = wrap((p) => handlersRef.current.onUpdated?.(p));
     const onImported = wrap((p) => handlersRef.current.onImported?.(p));
     const onCleared = wrap((p) => handlersRef.current.onCleared?.(p));
     const onFinished = wrap((p) => handlersRef.current.onFinished?.(p));
@@ -79,6 +80,7 @@ export function useSocket(eventId, handlers = {}) {
     s.on("attendee:unchecked", onUnchecked);
     s.on("attendee:added", onAdded);
     s.on("attendee:deleted", onDeleted);
+    s.on("attendee:updated", onUpdated);
     s.on("attendees:imported", onImported);
     s.on("attendees:cleared", onCleared);
     s.on("event:finished", onFinished);
@@ -100,6 +102,7 @@ export function useSocket(eventId, handlers = {}) {
       s.off("attendee:unchecked", onUnchecked);
       s.off("attendee:added", onAdded);
       s.off("attendee:deleted", onDeleted);
+      s.off("attendee:updated", onUpdated);
       s.off("attendees:imported", onImported);
       s.off("attendees:cleared", onCleared);
       s.off("event:finished", onFinished);

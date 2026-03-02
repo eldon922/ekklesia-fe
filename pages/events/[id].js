@@ -186,6 +186,10 @@ export default function EventDetailPage() {
   // finish / restart confirmation modal: null | 'finish' | 'restart'
   const [finishModal, setFinishModal] = useState(null);
   const [finishLoading, setFinishLoading] = useState(false);
+  // Edit attendee modal
+  const [editAttendee, setEditAttendee] = useState(null); // attendee object | null
+  const [editForm, setEditForm] = useState({ name: "", phone_number: "", email: "" });
+  const [editLoading, setEditLoading] = useState(false);
   // Scroll to top/bottom FAB state
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -292,6 +296,10 @@ export default function EventDetailPage() {
       setAttendees([]);
       setAllAttendees([]);
       applyStats(stats);
+    },
+    onUpdated: ({ attendee }) => {
+      setAttendees((prev) => prev.map((a) => (a.id === attendee.id ? attendee : a)));
+      setAllAttendees((prev) => prev.map((a) => (a.id === attendee.id ? attendee : a)));
     },
     onFinished: () => {
       setEvent((prev) => (prev ? { ...prev, is_finished: true } : prev));
@@ -413,6 +421,33 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleEditAttendee = (attendee) => {
+    setEditAttendee(attendee);
+    setEditForm({
+      name: attendee.name || "",
+      phone_number: attendee.phone_number || "",
+      email: attendee.email || "",
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editForm.name.trim()) return;
+    setEditLoading(true);
+    try {
+      const res = await attendeesApi.update(id, editAttendee.id, editForm);
+      const updated = res.data.data;
+      setAttendees((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      setAllAttendees((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      toast.success(t.toast_attendee_updated);
+      setEditAttendee(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || t.toast_attendee_update_fail);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   // Scroll to top/bottom handlers
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -426,12 +461,11 @@ export default function EventDetailPage() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      const scrollThreshold = 300;
+      const threshold = 300;
       const distFromBottom = document.body.scrollHeight - window.innerHeight - scrollY;
-      setShowScrollTop(scrollY > scrollThreshold);
-      setShowScrollBottom(distFromBottom > scrollThreshold);
+      setShowScrollTop(scrollY > threshold);
+      setShowScrollBottom(distFromBottom > threshold);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -839,7 +873,6 @@ export default function EventDetailPage() {
             <form onSubmit={handleAddAttendee}>
               <div className="card-body">
                 <div
-                  className="add-form-grid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "2fr 1fr 1fr auto",
@@ -1123,6 +1156,26 @@ export default function EventDetailPage() {
                           {!event.is_finished && (
                             <button
                               className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => handleEditAttendee(a)}
+                              title={t.detail_btn_edit}
+                              style={{ color: "var(--text-muted)" }}
+                            >
+                              <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                width={12}
+                                height={12}
+                                strokeWidth={2}
+                              >
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </button>
+                          )}
+                          {!event.is_finished && (
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
                               onClick={() => handleDeleteAttendee(a.id)}
                               style={{ color: "var(--danger)" }}
                             >
@@ -1196,7 +1249,84 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      {/* Finish / Restart confirmation modal */}
+      {/* Edit Attendee Modal */}
+      {editAttendee && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setEditAttendee(null)}>
+          <div className="modal" style={{ maxWidth: "420px" }}>
+            <div className="modal-header">
+              <h2 className="modal-title">{t.detail_edit_attendee}</h2>
+              <button
+                className="btn btn-ghost btn-icon"
+                onClick={() => setEditAttendee(null)}
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width={16} height={16} strokeWidth={2}>
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">
+                    {t.detail_add_name} <span style={{ color: "var(--danger)" }}>*</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder={t.detail_add_placeholder_name}
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    {t.detail_add_phone}{" "}
+                    <span style={{ color: "var(--text-faint)", fontWeight: 400, fontSize: "10px" }}>(opsional)</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    value={editForm.phone_number}
+                    onChange={(e) => setEditForm((f) => ({ ...f, phone_number: e.target.value }))}
+                    placeholder={t.detail_add_placeholder_phone}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">
+                    {t.detail_add_email}{" "}
+                    <span style={{ color: "var(--text-faint)", fontWeight: 400, fontSize: "10px" }}>(opsional)</span>
+                  </label>
+                  <input
+                    className="form-input"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                    placeholder={t.detail_add_placeholder_email}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setEditAttendee(null)}
+                  disabled={editLoading}
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={editLoading || !editForm.name.trim()}
+                >
+                  {editLoading ? t.form_saving : t.save}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
       {finishModal && (
         <div
           className="modal-overlay"
@@ -1368,14 +1498,8 @@ export default function EventDetailPage() {
           }
         }
         @keyframes fabIn {
-          from {
-            opacity: 0;
-            transform: translateY(6px) scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+          from { opacity: 0; transform: translateY(6px) scale(0.9); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
     </Layout>
