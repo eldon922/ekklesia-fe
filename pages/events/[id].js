@@ -186,8 +186,9 @@ export default function EventDetailPage() {
   // finish / restart confirmation modal: null | 'finish' | 'restart'
   const [finishModal, setFinishModal] = useState(null);
   const [finishLoading, setFinishLoading] = useState(false);
-  // Scroll to top FAB state
+  // Scroll to top/bottom FAB state
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
 
   const fetchEvent = useCallback(async () => {
     if (!id) return;
@@ -412,19 +413,23 @@ export default function EventDetailPage() {
     }
   };
 
-  // Scroll to top handler
+  // Scroll to top/bottom handlers
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" });
   };
 
   // Scroll event listener
   useEffect(() => {
     const handleScroll = () => {
+      const scrollY = window.scrollY;
       const scrollThreshold = 300;
-      setShowScrollTop(window.scrollY > scrollThreshold);
+      const distFromBottom = document.body.scrollHeight - window.innerHeight - scrollY;
+      setShowScrollTop(scrollY > scrollThreshold);
+      setShowScrollBottom(distFromBottom > scrollThreshold);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -834,6 +839,7 @@ export default function EventDetailPage() {
             <form onSubmit={handleAddAttendee}>
               <div className="card-body">
                 <div
+                  className="add-form-grid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "2fr 1fr 1fr auto",
@@ -1249,50 +1255,87 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      {/* Scroll to top FAB */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          style={{
-            position: "fixed",
-            bottom: "24px",
-            right: "24px",
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
-            background: "var(--accent)",
-            color: "#ffffff",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            boxShadow: "var(--shadow-md)",
-            zIndex: 1000,
-            transition: "all 0.2s ease",
-            animation: "fadeIn 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--accent-hover)";
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--accent)";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-        >
-          <svg
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            width={20}
-            height={20}
-            strokeWidth={2.5}
+      {/* Scroll FABs */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          zIndex: 1000,
+        }}
+      >
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              background: "var(--accent)",
+              color: "#ffffff",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "var(--shadow-md)",
+              transition: "background 0.15s, transform 0.15s",
+              animation: "fabIn 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--accent-hover)";
+              e.currentTarget.style.transform = "scale(1.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--accent)";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            title="Scroll to top"
           >
-            <polyline points="18 15 12 9 6 15" />
-          </svg>
-        </button>
-      )}
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width={18} height={18} strokeWidth={2.5}>
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </button>
+        )}
+        {showScrollBottom && (
+          <button
+            onClick={scrollToBottom}
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              background: "var(--bg-card)",
+              color: "var(--text-muted)",
+              border: "1px solid var(--border)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "var(--shadow-md)",
+              transition: "background 0.15s, transform 0.15s, color 0.15s",
+              animation: "fabIn 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--bg-elevated)";
+              e.currentTarget.style.color = "var(--text)";
+              e.currentTarget.style.transform = "scale(1.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--bg-card)";
+              e.currentTarget.style.color = "var(--text-muted)";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            title="Scroll to bottom"
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width={18} height={18} strokeWidth={2.5}>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       <style jsx>{`
         @keyframes pulse {
@@ -1322,6 +1365,16 @@ export default function EventDetailPage() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+        @keyframes fabIn {
+          from {
+            opacity: 0;
+            transform: translateY(6px) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
           }
         }
       `}</style>
