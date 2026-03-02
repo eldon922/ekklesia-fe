@@ -762,13 +762,183 @@ tbody td {
 .breadcrumb-sep { color: var(--text-faint); }
 .breadcrumb-current { color: var(--text-muted); }
 
+/* ─── Mobile nav drawer ──────────────────────────────────────────────────────── */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  z-index: 200;
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.mobile-hamburger {
+  width: 36px; height: 36px;
+  border: none;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 150;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.open { display: block; }
+
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .sidebar { display: none; }
-  .main { margin-left: 0; }
-  .page-header { padding: 18px 20px; flex-direction: column; align-items: flex-start; }
-  .page-content { padding: 20px; }
+  /* Show mobile header */
+  .mobile-header { display: flex; }
+
+  /* Sidebar becomes a slide-in drawer */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 160;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Main content shifts down for fixed header */
+  .main { margin-left: 0; padding-top: 56px; }
+
+  /* Page structure */
+  .page-header {
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header > div:last-child {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .page-content { padding: 16px; }
+
+  /* Events grid */
   .events-grid { grid-template-columns: 1fr; }
+
+  /* Stats grid: 2 cols on mobile */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Card header stacking */
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .card-header > div:last-child {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Search full width */
+  .search-wrap { width: 100% !important; }
+
+  /* Filter tabs full width */
+  .filter-tabs { width: 100%; }
+  .filter-tab { flex: 1; text-align: center; }
+
+  /* Add attendee form: stack to single column */
+  .add-attendee-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Detail page header buttons: wrap + full-width */
+  .detail-header-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .detail-header-actions .btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  /* Checkin page: stack two columns */
+  .checkin-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Live feed on mobile: appears below search */
+  .checkin-live-feed-sticky {
+    position: static !important;
+  }
+
+  /* Table: allow horizontal scroll */
+  .table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Table: hide less critical columns on small screens */
+  .table-col-email { display: none; }
+  .table-col-phone { display: none; }
+
+  /* Modal: full-width on mobile */
+  .modal {
+    max-width: 100% !important;
+    margin: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  /* Breadcrumb smaller */
+  .breadcrumb { font-size: 12px; }
+
+  /* Page title smaller */
+  .page-title { font-size: 17px; }
+
+  /* Stat value smaller */
+  .stat-value { font-size: 22px; }
+
+  /* Scroll FABs closer to edge */
+  .scroll-fabs {
+    bottom: 16px !important;
+    right: 16px !important;
+  }
+
+  /* Live activity banner full width on mobile */
+  .live-activity-banner {
+    left: 16px !important;
+    right: 16px !important;
+    transform: none !important;
+    top: 68px !important;
+    width: auto !important;
+  }
 }
 
 /* ─── Animations ─────────────────────────────────────────────────────────────── */
