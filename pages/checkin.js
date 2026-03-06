@@ -176,6 +176,17 @@ export default function CheckInPage() {
       searchRef.current.focus();
   }, [selectedEvent, unlocked]);
 
+  // Re-show password gate if token expires or is invalidated
+  useEffect(() => {
+    const handler = (e) => {
+      if (selectedEvent && String(e.detail.eventId) === String(selectedEvent.id)) {
+        setUnlocked(false);
+      }
+    };
+    window.addEventListener("ekklesia:auth-expired", handler);
+    return () => window.removeEventListener("ekklesia:auth-expired", handler);
+  }, [selectedEvent]);
+
   const fetchStats = useCallback(async (eventId) => {
     try {
       const res = await eventsApi.getOne(eventId);
@@ -187,14 +198,19 @@ export default function CheckInPage() {
     } catch {}
   }, []);
 
-  const handleSelectEvent = (event) => {
+  const handleSelectEvent = async (event) => {
     setSelectedEvent(event);
-    setUnlocked(!event.is_protected);
     setSearch("");
     setResults([]);
     setLastAction(null);
     setRecentCheckins([]);
-    if (!event.is_protected) fetchStats(event.id);
+    if (!event.is_protected) {
+      await eventsApi.verifyPassword(event.id, null);
+      setUnlocked(true);
+      fetchStats(event.id);
+    } else {
+      setUnlocked(false);
+    }
   };
 
   const handleUnlock = () => {
@@ -524,7 +540,6 @@ export default function CheckInPage() {
         ) : (
           /* Check-in station */
           <div
-            className="checkin-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 280px",
@@ -958,7 +973,7 @@ export default function CheckInPage() {
 
             {/* Live feed — only shows check-ins from ALL operators (no toast for others) */}
             <div>
-              <div className="card checkin-live-feed-sticky" style={{ position: "sticky", top: "20px" }}>
+              <div className="card" style={{ position: "sticky", top: "20px" }}>
                 <div className="card-header">
                   <span className="card-title">{t.checkin_live_feed}</span>
                   {connected && (
