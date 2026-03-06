@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { eventsApi } from '../lib/api';
 import { useLang } from '../contexts/LangContext';
+import { apiError } from "../lib/i18n";
 import toast from 'react-hot-toast';
 
 export default function EventFormModal({ event, onClose, onSaved }) {
@@ -54,7 +55,7 @@ export default function EventFormModal({ event, onClose, onSaved }) {
       }
       onSaved();
     } catch (err) {
-      toast.error(err.response?.data?.message || t.toast_error_generic);
+      toast.error(apiError(err, t));
     } finally {
       setLoading(false);
     }

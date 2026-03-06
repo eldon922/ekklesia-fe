@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import { eventsApi, attendeesApi } from "../lib/api";
 import { useSocket } from "../hooks/useSocket";
 import { useLang } from "../contexts/LangContext";
+import { apiError, apiSuccess } from "../lib/i18n";
 import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -26,7 +27,7 @@ function PasswordGate({ event, onUnlock }) {
       await eventsApi.verifyPassword(event.id, password);
       onUnlock();
     } catch (err) {
-      setError(err.response?.data?.message || t.toast_error_generic);
+      setError(apiError(err, t));
       setPassword("");
       inputRef.current?.focus();
     } finally {
@@ -306,7 +307,7 @@ export default function CheckInPage() {
       const res = await attendeesApi.checkIn(selectedEvent.id, attendee.id);
       const checked = res.data.data;
       setLastAction({ attendee: checked, type: "checkin" });
-      toast.success(t.toast_checkin_success(checked.name));
+      toast.success(apiSuccess(res.data, t));
       setSearch("");
       setResults([]);
       if (searchRef.current) searchRef.current.focus();
@@ -322,7 +323,7 @@ export default function CheckInPage() {
           `${alreadyChecked?.name || attendee.name} ${t.checkin_already}${checkedTime}`,
         );
       } else {
-        toast.error(err.response?.data?.message || t.toast_error_generic);
+        toast.error(apiError(err, t));
       }
     }
   };

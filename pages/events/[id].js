@@ -6,6 +6,7 @@ import ImportModal from "../../components/ImportModal";
 import { eventsApi, attendeesApi } from "../../lib/api";
 import { useSocket } from "../../hooks/useSocket";
 import { useLang } from "../../contexts/LangContext";
+import { apiError, apiSuccess } from "../../lib/i18n";
 import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -33,7 +34,7 @@ function PasswordGate({ event, onUnlock }) {
       await eventsApi.verifyPassword(event.id, password);
       onUnlock();
     } catch (err) {
-      setError(err.response?.data?.message || t.toast_error_generic);
+      setError(apiError(err, t));
       setPassword("");
       inputRef.current?.focus();
     } finally {
@@ -326,9 +327,9 @@ export default function EventDetailPage() {
   const handleCheckIn = async (attendee) => {
     try {
       const res = await attendeesApi.checkIn(id, attendee.id);
-      toast.success(t.toast_checkin_success(res.data.data.name));
+      toast.success(apiSuccess(res.data, t));
     } catch (err) {
-      toast.error(err.response?.data?.message || t.toast_error_generic);
+      toast.error(apiError(err, t));
     }
   };
 
@@ -362,7 +363,7 @@ export default function EventDetailPage() {
       setNewAttendee({ name: "", phone_number: "", email: "" });
       setShowAddForm(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || t.toast_attendee_add_fail);
+      toast.error(apiError(err, t));
     } finally {
       setAddLoading(false);
     }
@@ -397,7 +398,7 @@ export default function EventDetailPage() {
       setEvent((prev) => (prev ? { ...prev, is_finished: true } : prev));
       toast.success(t.toast_event_finished);
     } catch (err) {
-      toast.error(err.response?.data?.message || t.toast_error_generic);
+      toast.error(apiError(err, t));
     } finally {
       setFinishLoading(false);
       setFinishModal(null);
@@ -411,7 +412,7 @@ export default function EventDetailPage() {
       setEvent((prev) => (prev ? { ...prev, is_finished: false } : prev));
       toast.success(t.toast_event_restarted);
     } catch (err) {
-      toast.error(err.response?.data?.message || t.toast_error_generic);
+      toast.error(apiError(err, t));
     } finally {
       setFinishLoading(false);
       setFinishModal(null);
@@ -454,7 +455,7 @@ export default function EventDetailPage() {
       toast.success(t.toast_attendee_updated);
       setEditAttendee(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || t.toast_attendee_update_fail);
+      toast.error(apiError(err, t));
     } finally {
       setEditLoading(false);
     }

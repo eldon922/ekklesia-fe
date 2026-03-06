@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { attendeesApi } from "../lib/api";
 import { useLang } from "../contexts/LangContext";
+import { apiError, apiSuccess } from "../lib/i18n";
 import toast from "react-hot-toast";
 
 export default function ImportModal({ eventId, onClose, onImported }) {
@@ -44,16 +45,14 @@ export default function ImportModal({ eventId, onClose, onImported }) {
       if (res.data.duplicates && res.data.duplicates.length > 0) {
         setDuplicates(res.data.duplicates);
         setMode("duplicates");
-        toast.success(
-          `${res.data.imported} imported. ${res.data.duplicates.length} duplicates found.`,
-        );
+        toast.success(apiSuccess(res.data, t));
       } else {
-        toast.success(res.data.message);
+        toast.success(apiSuccess(res.data, t));
         onImported();
         onClose();
       }
     } catch (err) {
-      const msg = err.response?.data?.message || t.toast_error_generic;
+      const msg = apiError(err, t);
       toast.error(msg);
       if (err.response?.data?.detected_columns) {
         setResult({
@@ -86,7 +85,7 @@ export default function ImportModal({ eventId, onClose, onImported }) {
 
   const handleImportDuplicates = async () => {
     if (selectedDuplicates.size === 0) {
-      toast.error("Select at least one duplicate to import");
+      toast.error(t.import_select_duplicate);
       return;
     }
 
@@ -94,11 +93,11 @@ export default function ImportModal({ eventId, onClose, onImported }) {
     try {
       const toImport = duplicates.filter((_, i) => selectedDuplicates.has(i));
       const res = await attendeesApi.importDuplicates(eventId, toImport);
-      toast.success(res.data.message);
+      toast.success(apiSuccess(res.data, t));
       onImported();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || t.toast_error_generic);
+      toast.error(apiError(err, t));
     } finally {
       setLoading(false);
     }

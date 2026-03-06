@@ -4,6 +4,7 @@ import Layout from "../components/Layout";
 import EventFormModal from "../components/EventFormModal";
 import { eventsApi } from "../lib/api";
 import { useLang } from "../contexts/LangContext";
+import { apiError } from "../lib/i18n";
 import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -27,7 +28,7 @@ function PasswordGateModal({ event, onUnlock, onClose }) {
       await eventsApi.verifyPassword(event.id, password);
       onUnlock();
     } catch (err) {
-      setError(err.response?.data?.message || t.toast_error_generic);
+      setError(apiError(err, t));
       setPassword("");
       inputRef.current?.focus();
     } finally {
